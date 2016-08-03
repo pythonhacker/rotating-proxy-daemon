@@ -21,12 +21,12 @@ def proxy_iptables():
     """ Apply iptables rules on all proxy nodes """
 
     # get proxy list from proxylb
-    local('scp ubuntu@proxylb:proxyrotate/proxies.list .')
+    local('scp alpha@proxylb:proxyrotate/proxies.list .')
     if os.path.isfile('proxies.list'):
         for line in open('proxies.list'):
             ip = line.strip().split(',')[0].strip()
             env.host_string = ip
-            env.user = 'ubuntu'
+            env.user = 'alpha'
             print 'Restoring iptables rules on',ip,'...'
             run('sudo iptables-restore < /etc/iptables.rules')
 
@@ -35,13 +35,13 @@ def install_keys():
     """ Install an ssh key to all proxy nodes """
 
     # get proxy list from proxylb
-    local('scp ubuntu@proxylb:proxyrotate/proxies.list .')
+    local('scp alpha@proxylb:proxyrotate/proxies.list .')
     if os.path.isfile('proxies.list'):
         for line in open('proxies.list'):
             ip = line.strip().split(',')[0].strip()
             env.host_string = ip
-            env.user = 'ubuntu'
-            local('scp id_rsa.pub ubuntu@%s:' % ip)
+            env.user = 'alpha'
+            local('scp id_rsa.pub alpha@%s:' % ip)
             run('cat id_rsa.pub >> .ssh/authorized_keys')
 
 
