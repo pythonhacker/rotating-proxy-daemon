@@ -32,7 +32,7 @@ class Log(object):
         self.f.flush()
 
 
-def drop_privileges(uid_name='ubuntu', gid_name='ubuntu'):
+def drop_privileges(uid_name='alpha', gid_name='alpha'):
     """ Drop privileges of current process to given user and group """
     
     if os.getuid() != 0:
@@ -54,7 +54,7 @@ def drop_privileges(uid_name='ubuntu', gid_name='ubuntu'):
     # Ensure a very conservative umask
     old_umask = os.umask(077)
     
-def daemonize(pidfile, logfile=None, user='ubuntu', drop=True):
+def daemonize(pidfile, logfile=None, user='alpha', drop=True):
     """ Make a daemon with the given pidfile and optional logfile """
     
     # Disconnect from controlling TTY as a service
