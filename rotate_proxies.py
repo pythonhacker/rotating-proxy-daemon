@@ -387,7 +387,7 @@ class ProxyRotator(object):
     def post_process(self, ip):
         """ Post-process a switched-in host """
 
-        cmd="fab process_proxy_host -H %s -u ubuntu" % ip
+        cmd="fab process_proxy_host -H %s -u alpha" % ip
         os.system(cmd)
         
     def alive(self):
