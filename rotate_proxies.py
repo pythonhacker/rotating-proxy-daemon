@@ -314,6 +314,9 @@ class ProxyRotator(object):
         pid = data.strip().split('\n')[-3].strip().split()[-1].strip()
         print 'I.P address of new linode is',ip
         print 'ID of new linode is',pid
+        # Post process the host
+        print 'Post-processing',ip,'...'
+        self.post_process(ip)       
         return ip, pid
 
     def rotate(self, region=None):
