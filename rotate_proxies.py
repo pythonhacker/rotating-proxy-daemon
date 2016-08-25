@@ -29,7 +29,7 @@ Policy = enum('ROTATION_RANDOM',
 
 email_config = {'from_email': 'noreply@<domain>',
                 'to_email': ['proxies@<domain>'],
-                "send_email": True,
+                "send_email": False,
                 "email_subject": "Proxy switch report: %s from %s"
                 }
 
@@ -375,7 +375,7 @@ class ProxyRotator(object):
         # Post process the host
         print 'Post-processing',new_proxy,'...'
         self.post_process(new_proxy)
-        self.send_email(proxy_out, proxy_out_label, new_proxy, region)
+        # self.send_email(proxy_out, proxy_out_label, new_proxy, region)
 
     def send_email(self, proxy_out, label, proxy_in, region):
         """ Send email upon switching of a proxy """
