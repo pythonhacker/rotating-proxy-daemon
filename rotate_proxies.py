@@ -390,8 +390,11 @@ class ProxyRotator(object):
     def post_process(self, ip):
         """ Post-process a switched-in host """
 
-        cmd="fab process_proxy_host -H %s -u alpha" % ip
+        # cmd="fab process_proxy_host -H %s -u alpha" % ip
+        cmd = 'ssh alpha@%s "sudo iptables-restore < /etc/iptables.rules"' % ip
         os.system(cmd)
+        cmd = "sudo squid3 -f /etc/squid3/squid.conf"
+        os.system(cmd)      
         
     def alive(self):
         """ Return whether I should be alive """
