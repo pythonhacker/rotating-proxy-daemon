@@ -9,7 +9,7 @@ def process_proxy_host():
 
     with settings(warn_only=True):
         run("sudo iptables-restore < /etc/iptables.rules")
-        run("pgrep -f squid3; if [ $? -eq 1 ]; then sudo squid3 -f /etc/squid3/squid.conf; fi")
+        run("sudo squid3 -f /etc/squid3/squid.conf")
         
 def iptables_apply():
     """ Apply iptables rules from /etc/iptables.rules """
