@@ -391,9 +391,9 @@ class ProxyRotator(object):
         """ Post-process a switched-in host """
 
         # cmd="fab process_proxy_host -H %s -u alpha" % ip
-        cmd = 'ssh o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo iptables-restore < /etc/iptables.rules"' % ip
+        cmd = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo iptables-restore < /etc/iptables.rules"' % ip
         os.system(cmd)
-        cmd = 'ssh o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo squid3 -f /etc/squid3/squid.conf"'
+        cmd = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo squid3 -f /etc/squid3/squid.conf"'
         os.system(cmd)      
         
     def alive(self):
