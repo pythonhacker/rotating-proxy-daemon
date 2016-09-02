@@ -35,12 +35,16 @@ defaults
     errorfile 504 /etc/haproxy/errors/504.http
 
 # reverse proxy-squid
-listen  webfarm 0.0.0.0:8123
+frontend localproxy
+        bind *:5279
         mode http
-        cookie  SERVERID insert indirect nocache
-        balance roundrobin
         option http-keep-alive
-        option forwardfor header X-Client
+        default_backend rotateproxy
+
+backend rotateproxy
+        mode http
+        balance roundrobin
+        cookie  SynupSquidCache insert indirect nocache
         
         # Squid-farm configuration
 %(squid_config)s
@@ -50,4 +54,5 @@ listen admin_stats 0.0.0.0:8080
         mode  http
         stats uri       /stats
         stats realm     Global\ statistics
-        stats auth      admin:proxies
+        stats auth
+        option contstats
