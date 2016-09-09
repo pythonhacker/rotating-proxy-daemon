@@ -27,25 +27,26 @@ Policy = enum('ROTATION_RANDOM',
               # LRU + New region
               'ROTATION_LRU_NEW_REGION')
 
-email_config = {'from_email': 'noreply@<domain>',
-                'to_email': ['proxies@<domain>'],
-                "send_email": False,
-                "email_subject": "Proxy switch report: %s from %s"
-                }
+region_dict = {2: 'Dallas',
+               3: 'Fremont',
+               4: 'Atlanta',
+               6: 'Newark',
+               7: 'London',
+               8: 'Tokyo',
+               9: 'Singapore',
+               10: 'Frankfurt'}
+
 
 email_template = """
-Hi,
 
-I just switched a proxy node in the proxy infrastructure.
-Details are below.
+I just switched a proxy node in the proxy infrastructure. Details are below.
 
-Out: %(label)s, %(proxy_out)s
 In: %(label)s, %(proxy_in)s
+Out: %(label)s, %(proxy_out)s
+
 Region: %(region)s
 
-Have a good day.
-
--- Proxy Rotator Daemon
+-- Linode proxy daemon
 
 """
 
@@ -246,6 +247,11 @@ class ProxyConfig(object):
         """ Given proxy return its id """
 
         return self.proxy_dict[proxy][2]
+
+    def get_email_config(self):
+        """ Return email configuration """
+
+        return self.config['email']
     
 class ProxyRotator(object):
     """ Proxy rotation, provisioning & re-configuration with linode nodes """
@@ -384,7 +390,10 @@ class ProxyRotator(object):
         """ Send email upon switching of a proxy """
 
         print 'Sending email...'
+        region = region_dict[region]
         content = email_template % locals()
+        email_config = self.config.get_email_config()
+
         email_report.email_report(email_config, "%s", content)
                    
     def post_process(self, ip):
