@@ -3,8 +3,8 @@ import datetime
 import sys
 import socket
 import os
+import ses_email
 
-from email.mime.text import MIMEText
 
 def email_report(config, template, content):
     """ Email any kind of report to anyone """
@@ -16,16 +16,9 @@ def email_report(config, template, content):
     
     if config.get('send_email', True):
         print 'Sending email ...'
-        msg = MIMEText(data)
         from_e, to_e = config.get('from_email'), config.get('to_email')
-        
-        msg['Subject'] = config.get('email_subject') % (timestamp, socket.gethostname())
-        msg['From'] = from_e
-        msg['To'] = ', '.join(to_e)
-        sm = smtplib.SMTP('localhost')
-        sm.sendmail(from_e, to_e, msg.as_string())
-        sm.quit()
-
+        subject = config.get('email_subject') % (timestamp, socket.gethostname())
+        print ses_email.send_ses(from_e, subject, data, to_e)
         print 'done.'
     else:
         print 'Not sending email.'
