@@ -399,6 +399,8 @@ class ProxyRotator(object):
     def post_process(self, ip):
         """ Post-process a switched-in host """
 
+		# Sleep a bit before sshing
+		time.sleep(5)
         # cmd="fab process_proxy_host -H %s -u alpha" % ip
         cmd = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo iptables-restore < /etc/iptables.rules"' % ip
         os.system(cmd)
