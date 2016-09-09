@@ -34,7 +34,7 @@ email_config = {'from_email': 'noreply@<domain>',
                 }
 
 email_template = """
-Hi there!
+Hi,
 
 I just switched a proxy node in the proxy infrastructure.
 Details are below.
@@ -378,7 +378,7 @@ class ProxyRotator(object):
         # Post process the host
         print 'Post-processing',new_proxy,'...'
         self.post_process(new_proxy)
-        # self.send_email(proxy_out, proxy_out_label, new_proxy, region)
+        self.send_email(proxy_out, proxy_out_label, new_proxy, region)
 
     def send_email(self, proxy_out, label, proxy_in, region):
         """ Send email upon switching of a proxy """
