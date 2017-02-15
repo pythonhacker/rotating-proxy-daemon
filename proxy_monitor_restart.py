@@ -26,7 +26,7 @@ def parse_config(filename='/etc/haproxy/haproxy.cfg'):
             server_name, ip_address, port = match.groups()
             # Test for access via nc
             print ip_address, port
-            cmd = network_test_cmd % (ip_address, port)
+            cmd = network_test_cmd % (ip_address, int(port))
             if os.system(cmd) != 0:
                 # This squid instance is down
                 cmd = squid_restart_cmd % ip_address
@@ -38,4 +38,7 @@ def parse_config(filename='/etc/haproxy/haproxy.cfg'):
             
 if __name__ == "__main__":
     import sys
-    parse_config(sys.argv[1])
+    if len(sys.argv)>1:
+        parse_config(sys.argv[1])
+    else:
+        parse_config()
