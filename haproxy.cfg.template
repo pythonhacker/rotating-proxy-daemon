@@ -8,16 +8,6 @@ global
     group haproxy
     daemon
 
-    # Default SSL material locations
-    # ca-base /etc/ssl/certs
-    # crt-base /etc/ssl/private
-
-    # Default ciphers to use on SSL-enabled listening sockets.
-    # For more information, see ciphers(1SSL). This list is from:
-    #  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
-    # ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
-    # ssl-default-bind-options no-sslv3
-
 defaults
     log global
     mode    http
@@ -36,7 +26,7 @@ defaults
 
 # reverse proxy-squid
 frontend localproxy
-        bind *:5279
+        bind *:5729
         mode http
         option http-keep-alive
         default_backend rotateproxy
@@ -44,7 +34,7 @@ frontend localproxy
 backend rotateproxy
         mode http
         balance roundrobin
-        cookie  SynupSquidCache insert indirect nocache
+        cookie proxycookie insert indirect nocache
         
         # Squid-farm configuration
 %(squid_config)s
