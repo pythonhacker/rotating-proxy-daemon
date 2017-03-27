@@ -1,0 +1,30 @@
+*filter
+# Template iptables rules for Proxy nodes.
+#  Allow all loopback (lo0) traffic and drop all traffic to 127/8 that doesn't use lo0
+-A INPUT -i lo -j ACCEPT
+-A INPUT -d 127.0.0.0/8 -j REJECT
+
+#  Accept all established inbound connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+#  Allow ping
+# -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+#  Allow SSH connections
+-A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# Prevent DOS attack 
+-A INPUT -s myloadbalancerip -p tcp --dport myproxyport -m limit --limit 500/minute --limit-burst 800 -j ACCEPT
+
+#  Drop all other inbound - default deny unless explicitly allowed policy
+-A FORWARD -j DROP
+
+# Log dropped packets
+-N LOGGING
+-A INPUT -j LOGGING
+-A LOGGING -m limit --limit 2/min -j LOG --log-prefix "iptables packet dropped: " --log-level 7
+-A LOGGING -j DROP
+
+
+COMMIT
+
