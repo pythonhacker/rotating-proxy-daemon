@@ -50,6 +50,11 @@ Region: %(region)s
 
 """
 
+# Post process command
+post_process_cmd_template = """ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null %s@%s "%s"""
+iptables_restore_cmd = "sudo iptables-restore < /etc/iptables.rules"
+squid_restart_cmd = "sudo squid3 -f /etc/squid3/squid.conf"
+
 class ProxyConfig(object):
     """ Class representing configuration of crawler proxy infrastructure """
 
@@ -177,7 +182,15 @@ class ProxyConfig(object):
                     print 'Returning proxy',proxy,'from region',reg
                     self.switch_out_proxy(proxy)                    
                     return proxy
-            
+
+    def __getattr__(self, name):
+        """ Return from local, else written from config """
+
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            return self.config.get(name)
+        
     def switch_out_proxy(self, proxy):
         """ Switch out a given proxy IP """
 
@@ -401,10 +414,9 @@ class ProxyRotator(object):
 
         # Sleep a bit before sshing
         time.sleep(5)
-        # cmd="fab process_proxy_host -H %s -u alpha" % ip
-        cmd = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo iptables-restore < /etc/iptables.rules"' % ip
+        cmd = post_process_cmd_template % (self.config.user, ip, iptables_restore_cmd)
         os.system(cmd)
-        cmd = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alpha@%s "sudo squid3 -f /etc/squid3/squid.conf"' % ip
+        cmd = post_process_cmd_template % (self.config.user, ip, squid_restart_cmd)
         os.system(cmd)      
         
     def alive(self):
