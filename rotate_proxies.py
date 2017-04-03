@@ -466,7 +466,7 @@ class ProxyRotator(object):
             try:
                 ip, lid = self.make_new_linode(region)
                 self.linode_cmd.linode_update(int(lid),
-                                              'proxy' + str(i+1),
+                                              self.config.proxy_prefix + str(i+1),
                                               self.config.group)              
                 num += 1
             except Exception, e:
