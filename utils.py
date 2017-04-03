@@ -97,12 +97,12 @@ def daemonize(pidfile, logfile=None, user='alpha', drop=True):
 class LinodeCommand(object):
     """ Class encapsulating linode CLI commands """
 
-    def __init__(self, binary='linode', verbose=False):
+    def __init__(self, binary='linode', verbose=False, config=None):
         self.binary = binary
         self.verbose = verbose
         self.cmd_template = {'create': 'create -d %d -p %d -o %d -i %d -l %s -r %s',
                              'delete': 'delete -l %d',
-                             'list_proxies': 'find -g proxies -s proxylb',
+                             'list_proxies': 'find -g %s -s %s' % (config.group, config.proxylb),
                              'info': 'info -l %d',
                              'update': 'update -l %d -L %s -g %s'
                              }
