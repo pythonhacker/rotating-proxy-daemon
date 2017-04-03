@@ -51,7 +51,7 @@ Region: %(region)s
 """
 
 # Post process command
-post_process_cmd_template = """ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null %s@%s "%s"""
+post_process_cmd_template = """ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null %s@%s "%s" """
 iptables_restore_cmd = "sudo iptables-restore < /etc/iptables.rules"
 squid_restart_cmd = "sudo squid3 -f /etc/squid3/squid.conf"
 
@@ -415,8 +415,10 @@ class ProxyRotator(object):
         # Sleep a bit before sshing
         time.sleep(5)
         cmd = post_process_cmd_template % (self.config.user, ip, iptables_restore_cmd)
+        print 'SSH command 1=>',cmd
         os.system(cmd)
         cmd = post_process_cmd_template % (self.config.user, ip, squid_restart_cmd)
+        print 'SSH command 2=>',cmd     
         os.system(cmd)      
         
     def alive(self):
