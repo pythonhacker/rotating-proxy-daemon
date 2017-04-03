@@ -281,7 +281,7 @@ class ProxyRotator(object):
         # Heartbeat file
         self.hbf = '.heartbeat'
         # Linode creation class
-        self.linode_cmd = LinodeCommand(verbose=True)
+        self.linode_cmd = LinodeCommand(verbose=True, config=self.config)
         # If rotate is set, rotate before going to sleep
         if rotate:
             print 'Rotating a node'
