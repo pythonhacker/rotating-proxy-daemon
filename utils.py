@@ -54,7 +54,7 @@ def drop_privileges(uid_name='alpha', gid_name='alpha'):
     # Ensure a very conservative umask
     old_umask = os.umask(077)
     
-def daemonize(pidfile, logfile=None, user='alpha', drop=True):
+def daemonize(pidfile, logfile=None, user='ubuntu', drop=True):
     """ Make a daemon with the given pidfile and optional logfile """
     
     # Disconnect from controlling TTY as a service
@@ -82,7 +82,7 @@ def daemonize(pidfile, logfile=None, user='alpha', drop=True):
         print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror)
         sys.exit(1)
 
-    # Drop privileges to tingtun user by default
+    # Drop privileges to given user by default
     if drop:
         drop_privileges(user, user)
     
