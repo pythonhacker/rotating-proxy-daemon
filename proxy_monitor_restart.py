@@ -51,4 +51,4 @@ if __name__ == "__main__":
     if len(sys.argv)>1:
         parse_config(sys.argv[1])
     else:
-        parse_config()
+        main()
