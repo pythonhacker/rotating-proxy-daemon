@@ -44,7 +44,7 @@ def main():
     
     while True:
         parse_config()
-        time.sleep(30)
+        time.sleep(300)
         
 if __name__ == "__main__":
     import sys
