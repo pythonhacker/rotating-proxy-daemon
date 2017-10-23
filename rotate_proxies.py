@@ -475,8 +475,12 @@ class ProxyRotator(object):
             idx += 1
 
         print 'Provisioned',num,'linodes.'
-
-        print >> open('proxies.list', 'w'), rotator.linode_cmd.linode_list_proxies().strip()
+        linodes_list = rotator.linode_cmd.linode_list_proxies().strip().split('\n')
+        # Randomize it
+        for i in range(5):
+            random.shuffle(linodes_list)
+        
+        print >> open('proxies.list', 'w'), '\n'.join(linodes_list)
         print 'Saved current proxy configuration to proxies.list'
                   
     def test(self):
