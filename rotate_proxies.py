@@ -231,7 +231,12 @@ class ProxyConfig(object):
         """ Write current proxy configuration into the load balancer config """
 
         lines, idx = [], 1
-        for proxy, reg, pi, si, so in self.proxy_dict.values():
+        # Shuffle
+        items = self.proxy_dict.values()
+        for i in range(10):
+            random.shuffle(items)
+            
+        for proxy, reg, pi, si, so in items:
             if self.proxy_state[proxy]:
                 lines.append('\tserver  squid%d %s:8321 check inter 10000 rise 2 fall 5' % (idx, proxy))
                 idx += 1
