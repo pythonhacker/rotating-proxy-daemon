@@ -572,7 +572,31 @@ class ProxyRotator(object):
             count += 1
 
         sys.exit(0)
-    
+    # AWS code
+    def make_new_ec2(self, test=False, verbose=False):
+        # If calling as test, make up an ip
+        if test:
+            return '.'.join(map(lambda x: str(random.randrange(20, 100)), range(4))), random.randrange(10000,
+                                                                                                       50000)
+        params = dict(ImageId=self.config.aws_image_id,
+                      InstanceType=self.config.aws_instance_type,
+                      KeyName=self.config.aws_key_name,
+                      SecurityGroupIds=self.config.aws_security_groups,
+                      SubnetId=self.config.aws_subnet_id ,
+                      DryRun=True)
+
+        print 'Making new ec2...'
+        ec2_instance = self.aws_command.create_ec2(**params)
+
+        ip = self.ec2_instance.network_interfaces_attribute[0]['Association']['PublicIp']
+        pid = self.ec2_instance.id
+
+        # Post process the host
+        print 'Post-processing',ip,'...'
+        self.post_process(ip)
+
+        return ip, pid 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='rotate_proxies')
     parser.add_argument('-C','--conf',help='Use the given configuration file', default='proxy.conf')    
