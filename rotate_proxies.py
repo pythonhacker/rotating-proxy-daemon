@@ -600,6 +600,8 @@ class ProxyRotator(object):
 
         print 'Making new ec2...'
         ec2_instance = self.aws_command.create_ec2(**params)
+        ec2_instance.wait_until_running()
+        time.sleep(10)
 
         ip = self.ec2_instance.network_interfaces_attribute[0]['Association']['PublicIp']
         pid = self.ec2_instance.id
