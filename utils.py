@@ -145,6 +145,15 @@ class AWSCommand(object):
     def create_ec2(self, **params):
         return self.ec2.create_instances(MaxCount=1, MinCount=1, **params)[0]
 
+    def list_proxies(self):
+        proxies = []
+        filters=[
+            {'Name':'image-id', 'Values':["ami-f104ec8c"]},
+            {'Name': 'instance-state-name', 'Values': ['running']}
+        ]
+        for instance in self.ec2.instances.filter(Filters=filters):
+            proxies.append(','.join([instance.network_interfaces_attribute[0]['Association']['PublicIp'], '', instance.id]))
+        return proxies
 
     def delete_ec2(self, instance_id):
         instance = self.ec2.Instance(instance_id)
