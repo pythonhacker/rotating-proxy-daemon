@@ -603,8 +603,8 @@ class ProxyRotator(object):
         ec2_instance.wait_until_running()
         time.sleep(10)
 
-        ip = self.ec2_instance.network_interfaces_attribute[0]['Association']['PublicIp']
-        pid = self.ec2_instance.id
+        ip = ec2_instance.public_ip_address
+        pid = ec2_instance.id
 
         # Post process the host
         print 'Post-processing',ip,'...'
