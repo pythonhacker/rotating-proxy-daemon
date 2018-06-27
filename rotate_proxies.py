@@ -17,6 +17,7 @@ import json
 import email_report
 
 from utils import daemonize, randpass, enum, LinodeCommand, AWSCommand
+from botocore.exceptions import ClientError
 
 # Rotation Policies
 Policy = enum('ROTATION_RANDOM',
@@ -475,27 +476,39 @@ class ProxyRotator(object):
             start = 0
                         
         for i in range(start, start + count):
-            # region = self.pick_region()
-            # Do a round-robin on regions
-            region = self.config.region_ids[idx % len(self.config.region_ids) ]
-            try:
-                ip, lid = self.make_new_linode(region)
-                self.linode_cmd.linode_update(int(lid),
-                                              self.config.proxy_prefix + str(i+1),
-                                              self.config.group)              
-                num += 1
-            except Exception, e:
-                print 'Error creating linode',e
+
+            if self.config.vps_provider == 'linode':
+                # region = self.pick_region()
+                # Do a round-robin on regions
+                region = self.config.region_ids[idx % len(self.config.region_ids) ]
+                try:
+                    ip, lid = self.make_new_linode(region)
+                    self.linode_cmd.linode_update(int(lid),
+                                                self.config.proxy_prefix + str(i+1),
+                                                self.config.group)              
+                    num += 1
+                except Exception, e:
+                    print 'Error creating linode',e
+
+            elif self.config.vps_provider == 'aws':
+                try:
+                    ip, instance_id = self.make_new_ec2()
+                    num += 1
+                except ClientError as e:
+                    print 'Error creating aws ec2 instance ',e
 
             idx += 1
 
-        print 'Provisioned',num,'linodes.'
-        linodes_list = rotator.linode_cmd.linode_list_proxies().strip().split('\n')
+        print 'Provisioned',num,' proxies.'
+        if self.config.vps_provider == 'linode':
+            proxies_list = rotator.linode_cmd.linode_list_proxies().strip().split('\n')
+        elif self.config.vps_provider == 'aws':
+            proxies_list = rotator.aws_command.list_proxies()
         # Randomize it
         for i in range(5):
-            random.shuffle(linodes_list)
-        
-        print >> open('proxies.list', 'w'), '\n'.join(linodes_list)
+            random.shuffle(proxies_list)
+
+        print >> open('proxies.list', 'w'), '\n'.join(proxies_list)
         print 'Saved current proxy configuration to proxies.list'
                   
     def test(self):
