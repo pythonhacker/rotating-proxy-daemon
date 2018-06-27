@@ -442,14 +442,22 @@ class ProxyRotator(object):
     def drop(self):
         """ Drop all the proxies in current configuration (except the LB) """
 
-        print 'Dropping all proxies ...'
-        proxies = rotator.linode_cmd.linode_list_proxies()
-        for item in proxies.split('\n'):
-            if item.strip() == "": continue
-            ip,dc,lid,si,so = item.split(',')
-            print '\tDropping linode',lid,'with IP',ip,'from dc',dc,'...'
-            self.linode_cmd.linode_delete(int(lid))
+        if self.config.vps_provider == 'linode':
+            print 'Dropping all proxies ...'
+            proxies = rotator.linode_cmd.linode_list_proxies()
+            for item in proxies.split('\n'):
+                if item.strip() == "": continue
+                ip,dc,lid,si,so = item.split(',')
+                print '\tDropping linode',lid,'with IP',ip,'from dc',dc,'...'
+                self.linode_cmd.linode_delete(int(lid))
 
+        elif self.config.vps_provider == 'aws':
+            print 'Dropping all proxies ...'
+            proxies = rotator.aws_command.list_proxies()
+            for item in proxies:
+                ip,_,instance_id = item.split(',')
+                print '\tDropping ec2',instance_id,'with IP',ip,'...'
+                self.aws_command.delete_ec2(instance_id)
         print 'done.'
 
     def provision(self, count=8, add=False):
