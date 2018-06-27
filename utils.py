@@ -136,6 +136,21 @@ class LinodeCommand(object):
         data = self.linode_info(linode_id)
         return data.split('\n')[0].split(':')[-1].strip()
 
+class AWSCommand(object):
+    '''Class encapsulating the aws ec2 API'''
+    def __init__(self, config=None):
+        self.ec2 = boto3.resource('ec2')
+        self.config = config
+
+    def create_ec2(self, **params):
+        return self.ec2.create_instances(MaxCount=1, MinCount=1, **params)[0]
+
+
+    def delete_ec2(self, instance_id):
+        instance = self.ec2.Instance(instance_id)
+        instance.terminate()
+        instance.wait_until_terminated()
+
 if __name__ == "__main__":
     l = LinodeCommand()
     l.get_label(int(sys.argv[1]))
