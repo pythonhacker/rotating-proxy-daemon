@@ -16,7 +16,7 @@ import signal
 import json
 import email_report
 
-from utils import daemonize, randpass, enum, LinodeCommand
+from utils import daemonize, randpass, enum, LinodeCommand, AWSCommand
 
 # Rotation Policies
 Policy = enum('ROTATION_RANDOM',
@@ -287,6 +287,8 @@ class ProxyRotator(object):
         self.hbf = '.heartbeat'
         # Linode creation class
         self.linode_cmd = LinodeCommand(verbose=True, config=self.config)
+        #AWS resource manager
+        self.aws_command = AWSCommand(config=self.config)
         # If rotate is set, rotate before going to sleep
         if rotate:
             print 'Rotating a node'
