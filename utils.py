@@ -5,6 +5,7 @@ import sys
 import pwd
 import uuid
 import functools
+import boto3
 
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
