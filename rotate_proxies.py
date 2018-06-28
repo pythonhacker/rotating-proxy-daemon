@@ -681,7 +681,10 @@ if __name__ == "__main__":
         
     if args.writeconfig:
         # Load current proxies config and write proxies.list file
-        print >> open('proxies.list', 'w'), rotator.linode_cmd.linode_list_proxies().strip()
+        if self.config.vps_provider == 'linode':
+            print >> open('proxies.list', 'w'), rotator.linode_cmd.linode_list_proxies().strip()
+        elif self.config.vps_provider == 'aws':
+            print >> open('proxies.list', 'w'), rotator.aws_command.list_proxies().strip()
         print 'Saved current proxy configuration to proxies.list'
         sys.exit(0)
 
