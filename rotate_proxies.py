@@ -356,9 +356,15 @@ class ProxyRotator(object):
             region = self.pick_region()
         else:
             print 'Using supplied region',region,'...'
-            
+
+        if self.config.vps_provider == 'linode':
         # Switch in the new linode from this region
-        new_proxy, proxy_id = self.make_new_linode(region)
+            new_proxy, proxy_id = self.make_new_linode(region)
+
+        elif self.config.vps_provider == 'aws':
+        # Switch in the new aws instance
+            new_proxy, proxy_id = self.make_new_ec2()
+
         # Rotate another node
         if self.config.policy == Policy.ROTATION_RANDOM:
             proxy_out = self.config.get_proxy_for_rotation(use_random=True, input_region=region)
@@ -368,8 +374,8 @@ class ProxyRotator(object):
             proxy_out = self.config.get_proxy_for_rotation(least_used=True, input_region=region)
         elif self.config.policy == Policy.ROTATION_LRU_NEW_REGION:
             proxy_out = self.config.get_proxy_for_rotation(least_used=True, region_switch=True,
-                                                           input_region=region)
-            
+                                                        input_region=region)
+
         # Switch in the new proxy
         self.config.switch_in_proxy(new_proxy, proxy_id, region)
         print 'Switched in new proxy',new_proxy
@@ -383,24 +389,27 @@ class ProxyRotator(object):
             if proxy_out != None:
                 print 'Switched out proxy',proxy_out
                 proxy_out_id = int(self.config.get_proxy_id(proxy_out))
-                
                 if proxy_out_id != 0:
-                    proxy_out_label = self.linode_cmd.get_label(proxy_out_id)
-                    print 'Removing switched out linode',proxy_out_id
-                    self.linode_cmd.linode_delete(proxy_out_id)
+                    if self.config.vps_provider == 'linode':
+                        proxy_out_label = self.linode_cmd.get_label(proxy_out_id)
+                        print 'Removing switched out linode',proxy_out_id
+                        self.linode_cmd.linode_delete(proxy_out_id)
+                    elif self.config.vps_provider == 'aws':
+                        print 'Removing switched out aws instance',proxy_out_id
+                        self.aws_command.delete_ec2(proxy_out_id)
                 else:
-                    'Proxy id is 0, not removing linode',proxy_out
+                    'Proxy id is 0, not removing proxy',proxy_out
         else:
             print 'Error - Did not switch out proxy as there was a problem in writing/restarting LB'
 
-
-        if proxy_out_label != None:
-            # Get its label and assign it to the new linode
-            print 'Assigning label',proxy_out_label,'to new linode',proxy_id
-            time.sleep(5)
-            self.linode_cmd.linode_update(int(proxy_id),
-                                          proxy_out_label,
-                                          self.config.group)
+        if self.config.vps_provider == 'linode':
+            if proxy_out_label != None:
+                # Get its label and assign it to the new linode
+                print 'Assigning label',proxy_out_label,'to new linode',proxy_id
+                time.sleep(5)
+                self.linode_cmd.linode_update(int(proxy_id),
+                                            proxy_out_label,
+                                            self.config.group)
 
         # Post process the host
         print 'Post-processing',new_proxy,'...'
