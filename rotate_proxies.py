@@ -445,9 +445,12 @@ class ProxyRotator(object):
 
     def create(self, region=3):
         """ Create a new linode for testing """
-
-        print 'Creating new linode in region',region,'...'
-        new_proxy = self.make_new_linode(region, verbose=True)
+        if self.config.vps_provider == 'linode':
+            print 'Creating new linode in region',region,'...'
+            new_proxy = self.make_new_linode(region, verbose=True)
+        elif self.config.vps_provider == 'aws':
+            print 'Creating new ec2 instance','...'
+            new_proxy = self.make_new_ec2()
 
     def drop(self):
         """ Drop all the proxies in current configuration (except the LB) """
