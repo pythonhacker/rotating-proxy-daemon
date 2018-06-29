@@ -116,7 +116,10 @@ class ProxyConfig(object):
             if int(float(switch_out))==0:
                 switch_out = int(time.time())
                 
-            self.proxy_dict[proxy_ip] = [proxy_ip, int(region), int(proxy_id), int(float(switch_in)), int(float(switch_out))]
+            if self.vps_provider == 'linode':
+                self.proxy_dict[proxy_ip] = [proxy_ip, int(region), int(proxy_id), int(float(switch_in)), int(float(switch_out))]
+            elif self.vps_provider == 'aws':
+                self.proxy_dict[proxy_ip] = [proxy_ip, int(region), proxy_id, int(float(switch_in)), int(float(switch_out))]
             self.proxy_state[proxy_ip] = True
 
         print 'Processed',len(self.proxy_state),'proxies.'
@@ -684,7 +687,7 @@ if __name__ == "__main__":
         if rotator.config.vps_provider == 'linode':
             print >> open('proxies.list', 'w'), rotator.linode_cmd.linode_list_proxies().strip()
         elif rotator.config.vps_provider == 'aws':
-            print >> open('proxies.list', 'w'), rotator.aws_command.list_proxies().strip()
+            print >> open('proxies.list', 'w'), '\n'.join(rotator.aws_command.list_proxies())
         print 'Saved current proxy configuration to proxies.list'
         sys.exit(0)
 
