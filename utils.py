@@ -149,7 +149,7 @@ class AWSCommand(object):
     def list_proxies(self):
         proxies = []
         filters=[
-            {'Name':'image-id', 'Values':["ami-f104ec8c"]},
+            {'Name':'image-id', 'Values':[self.config.aws_image_id]},
             {'Name': 'instance-state-name', 'Values': ['running']}
         ]
         for instance in self.ec2.instances.filter(Filters=filters):
