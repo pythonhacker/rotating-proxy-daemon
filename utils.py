@@ -153,7 +153,7 @@ class AWSCommand(object):
             {'Name': 'instance-state-name', 'Values': ['running']}
         ]
         for instance in self.ec2.instances.filter(Filters=filters):
-            proxies.append(','.join([instance.public_ip_address, '', instance.id,'0','0']))
+            proxies.append(','.join([instance.public_ip_address, '0', instance.id,'0','0']))
         return proxies
 
     def delete_ec2(self, instance_id):
