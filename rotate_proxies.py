@@ -207,9 +207,9 @@ class ProxyConfig(object):
         """ Switch in a given proxy IP """
 
         # Mark its switched out timestamp
-        if self.config.vps_provider == 'linode':
+        if self.vps_provider == 'linode':
             self.proxy_dict[proxy] = [proxy, int(region), int(proxy_id), int(time.time()), int(time.time())]
-        elif self.config.vps_provider == 'aws':
+        elif self.vps_provider == 'aws':
             self.proxy_dict[proxy] = [proxy, int(region), proxy_id, int(time.time()), int(time.time())]
             # Enable it
         self.proxy_state[proxy] = True     
