@@ -16,7 +16,8 @@ import signal
 import json
 import email_report
 
-from utils import daemonize, randpass, enum, LinodeCommand
+from utils import daemonize, randpass, enum, LinodeCommand, AWSCommand
+from botocore.exceptions import ClientError
 
 # Rotation Policies
 Policy = enum('ROTATION_RANDOM',
@@ -115,7 +116,10 @@ class ProxyConfig(object):
             if int(float(switch_out))==0:
                 switch_out = int(time.time())
                 
-            self.proxy_dict[proxy_ip] = [proxy_ip, int(region), int(proxy_id), int(float(switch_in)), int(float(switch_out))]
+            if self.vps_provider == 'linode':
+                self.proxy_dict[proxy_ip] = [proxy_ip, int(region), int(proxy_id), int(float(switch_in)), int(float(switch_out))]
+            elif self.vps_provider == 'aws':
+                self.proxy_dict[proxy_ip] = [proxy_ip, int(region), proxy_id, int(float(switch_in)), int(float(switch_out))]
             self.proxy_state[proxy_ip] = True
 
         print 'Processed',len(self.proxy_state),'proxies.'
@@ -203,8 +207,11 @@ class ProxyConfig(object):
         """ Switch in a given proxy IP """
 
         # Mark its switched out timestamp
-        self.proxy_dict[proxy] = [proxy, int(region), int(proxy_id), int(time.time()), int(time.time())]
-        # Enable it
+        if self.vps_provider == 'linode':
+            self.proxy_dict[proxy] = [proxy, int(region), int(proxy_id), int(time.time()), int(time.time())]
+        elif self.vps_provider == 'aws':
+            self.proxy_dict[proxy] = [proxy, int(region), proxy_id, int(time.time()), int(time.time())]
+            # Enable it
         self.proxy_state[proxy] = True     
 
     def get_active_regions(self):
@@ -287,6 +294,8 @@ class ProxyRotator(object):
         self.hbf = '.heartbeat'
         # Linode creation class
         self.linode_cmd = LinodeCommand(verbose=True, config=self.config)
+        #AWS resource manager
+        self.aws_command = AWSCommand(config=self.config)
         # If rotate is set, rotate before going to sleep
         if rotate:
             print 'Rotating a node'
@@ -353,9 +362,15 @@ class ProxyRotator(object):
             region = self.pick_region()
         else:
             print 'Using supplied region',region,'...'
-            
+
+        if self.config.vps_provider == 'linode':
         # Switch in the new linode from this region
-        new_proxy, proxy_id = self.make_new_linode(region)
+            new_proxy, proxy_id = self.make_new_linode(region)
+
+        elif self.config.vps_provider == 'aws':
+        # Switch in the new aws instance
+            new_proxy, proxy_id = self.make_new_ec2()
+
         # Rotate another node
         if self.config.policy == Policy.ROTATION_RANDOM:
             proxy_out = self.config.get_proxy_for_rotation(use_random=True, input_region=region)
@@ -365,8 +380,8 @@ class ProxyRotator(object):
             proxy_out = self.config.get_proxy_for_rotation(least_used=True, input_region=region)
         elif self.config.policy == Policy.ROTATION_LRU_NEW_REGION:
             proxy_out = self.config.get_proxy_for_rotation(least_used=True, region_switch=True,
-                                                           input_region=region)
-            
+                                                        input_region=region)
+
         # Switch in the new proxy
         self.config.switch_in_proxy(new_proxy, proxy_id, region)
         print 'Switched in new proxy',new_proxy
@@ -380,24 +395,27 @@ class ProxyRotator(object):
             if proxy_out != None:
                 print 'Switched out proxy',proxy_out
                 proxy_out_id = int(self.config.get_proxy_id(proxy_out))
-                
                 if proxy_out_id != 0:
-                    proxy_out_label = self.linode_cmd.get_label(proxy_out_id)
-                    print 'Removing switched out linode',proxy_out_id
-                    self.linode_cmd.linode_delete(proxy_out_id)
+                    if self.config.vps_provider == 'linode':
+                        proxy_out_label = self.linode_cmd.get_label(proxy_out_id)
+                        print 'Removing switched out linode',proxy_out_id
+                        self.linode_cmd.linode_delete(proxy_out_id)
+                    elif self.config.vps_provider == 'aws':
+                        print 'Removing switched out aws instance',proxy_out_id
+                        self.aws_command.delete_ec2(proxy_out_id)
                 else:
-                    'Proxy id is 0, not removing linode',proxy_out
+                    'Proxy id is 0, not removing proxy',proxy_out
         else:
             print 'Error - Did not switch out proxy as there was a problem in writing/restarting LB'
 
-
-        if proxy_out_label != None:
-            # Get its label and assign it to the new linode
-            print 'Assigning label',proxy_out_label,'to new linode',proxy_id
-            time.sleep(5)
-            self.linode_cmd.linode_update(int(proxy_id),
-                                          proxy_out_label,
-                                          self.config.group)
+        if self.config.vps_provider == 'linode':
+            if proxy_out_label != None:
+                # Get its label and assign it to the new linode
+                print 'Assigning label',proxy_out_label,'to new linode',proxy_id
+                time.sleep(5)
+                self.linode_cmd.linode_update(int(proxy_id),
+                                            proxy_out_label,
+                                            self.config.group)
 
         # Post process the host
         print 'Post-processing',new_proxy,'...'
@@ -433,21 +451,32 @@ class ProxyRotator(object):
 
     def create(self, region=3):
         """ Create a new linode for testing """
-
-        print 'Creating new linode in region',region,'...'
-        new_proxy = self.make_new_linode(region, verbose=True)
+        if self.config.vps_provider == 'linode':
+            print 'Creating new linode in region',region,'...'
+            new_proxy = self.make_new_linode(region, verbose=True)
+        elif self.config.vps_provider == 'aws':
+            print 'Creating new ec2 instance','...'
+            new_proxy = self.make_new_ec2()
 
     def drop(self):
         """ Drop all the proxies in current configuration (except the LB) """
 
-        print 'Dropping all proxies ...'
-        proxies = rotator.linode_cmd.linode_list_proxies()
-        for item in proxies.split('\n'):
-            if item.strip() == "": continue
-            ip,dc,lid,si,so = item.split(',')
-            print '\tDropping linode',lid,'with IP',ip,'from dc',dc,'...'
-            self.linode_cmd.linode_delete(int(lid))
+        if self.config.vps_provider == 'linode':
+            print 'Dropping all proxies ...'
+            proxies = rotator.linode_cmd.linode_list_proxies()
+            for item in proxies.split('\n'):
+                if item.strip() == "": continue
+                ip,dc,lid,si,so = item.split(',')
+                print '\tDropping linode',lid,'with IP',ip,'from dc',dc,'...'
+                self.linode_cmd.linode_delete(int(lid))
 
+        elif self.config.vps_provider == 'aws':
+            print 'Dropping all proxies ...'
+            proxies = rotator.aws_command.list_proxies()
+            for item in proxies:
+                ip,_,instance_id = item.split(',')
+                print '\tDropping ec2',instance_id,'with IP',ip,'...'
+                self.aws_command.delete_ec2(instance_id)
         print 'done.'
 
     def provision(self, count=8, add=False):
@@ -465,27 +494,39 @@ class ProxyRotator(object):
             start = 0
                         
         for i in range(start, start + count):
-            # region = self.pick_region()
-            # Do a round-robin on regions
-            region = self.config.region_ids[idx % len(self.config.region_ids) ]
-            try:
-                ip, lid = self.make_new_linode(region)
-                self.linode_cmd.linode_update(int(lid),
-                                              self.config.proxy_prefix + str(i+1),
-                                              self.config.group)              
-                num += 1
-            except Exception, e:
-                print 'Error creating linode',e
+
+            if self.config.vps_provider == 'linode':
+                # region = self.pick_region()
+                # Do a round-robin on regions
+                region = self.config.region_ids[idx % len(self.config.region_ids) ]
+                try:
+                    ip, lid = self.make_new_linode(region)
+                    self.linode_cmd.linode_update(int(lid),
+                                                self.config.proxy_prefix + str(i+1),
+                                                self.config.group)              
+                    num += 1
+                except Exception, e:
+                    print 'Error creating linode',e
+
+            elif self.config.vps_provider == 'aws':
+                try:
+                    ip, instance_id = self.make_new_ec2()
+                    num += 1
+                except ClientError as e:
+                    print 'Error creating aws ec2 instance ',e
 
             idx += 1
 
-        print 'Provisioned',num,'linodes.'
-        linodes_list = rotator.linode_cmd.linode_list_proxies().strip().split('\n')
+        print 'Provisioned',num,' proxies.'
+        if self.config.vps_provider == 'linode':
+            proxies_list = rotator.linode_cmd.linode_list_proxies().strip().split('\n')
+        elif self.config.vps_provider == 'aws':
+            proxies_list = rotator.aws_command.list_proxies()
         # Randomize it
         for i in range(5):
-            random.shuffle(linodes_list)
-        
-        print >> open('proxies.list', 'w'), '\n'.join(linodes_list)
+            random.shuffle(proxies_list)
+
+        print >> open('proxies.list', 'w'), '\n'.join(proxies_list)
         print 'Saved current proxy configuration to proxies.list'
                   
     def test(self):
@@ -562,7 +603,33 @@ class ProxyRotator(object):
             count += 1
 
         sys.exit(0)
-    
+    # AWS code
+    def make_new_ec2(self, test=False, verbose=False):
+        # If calling as test, make up an ip
+        if test:
+            return '.'.join(map(lambda x: str(random.randrange(20, 100)), range(4))), random.randrange(10000,
+                                                                                                       50000)
+        params = dict(ImageId=self.config.aws_image_id,
+                      InstanceType=self.config.aws_instance_type,
+                      KeyName=self.config.aws_key_name,
+                      SecurityGroupIds=self.config.aws_security_groups,
+                      SubnetId=self.config.aws_subnet_id ,
+                      DryRun=True)
+
+        print 'Making new ec2...'
+        ec2_instance = self.aws_command.create_ec2(**params)
+        ec2_instance.wait_until_running()
+        time.sleep(10)
+
+        ip = ec2_instance.public_ip_address
+        pid = ec2_instance.id
+
+        # Post process the host
+        print 'Post-processing',ip,'...'
+        self.post_process(ip)
+
+        return ip, pid 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='rotate_proxies')
     parser.add_argument('-C','--conf',help='Use the given configuration file', default='proxy.conf')    
@@ -620,7 +687,10 @@ if __name__ == "__main__":
         
     if args.writeconfig:
         # Load current proxies config and write proxies.list file
-        print >> open('proxies.list', 'w'), rotator.linode_cmd.linode_list_proxies().strip()
+        if rotator.config.vps_provider == 'linode':
+            print >> open('proxies.list', 'w'), rotator.linode_cmd.linode_list_proxies().strip()
+        elif rotator.config.vps_provider == 'aws':
+            print >> open('proxies.list', 'w'), '\n'.join(rotator.aws_command.list_proxies())
         print 'Saved current proxy configuration to proxies.list'
         sys.exit(0)
 

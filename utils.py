@@ -5,6 +5,7 @@ import sys
 import pwd
 import uuid
 import functools
+import boto3
 
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
@@ -135,6 +136,30 @@ class LinodeCommand(object):
 
         data = self.linode_info(linode_id)
         return data.split('\n')[0].split(':')[-1].strip()
+
+class AWSCommand(object):
+    '''Class encapsulating the aws ec2 API'''
+    def __init__(self, config=None):
+        self.ec2 = boto3.resource('ec2')
+        self.config = config
+
+    def create_ec2(self, **params):
+        return self.ec2.create_instances(MaxCount=1, MinCount=1, **params)[0]
+
+    def list_proxies(self):
+        proxies = []
+        filters=[
+            {'Name':'image-id', 'Values':[self.config.aws_image_id]},
+            {'Name': 'instance-state-name', 'Values': ['running']}
+        ]
+        for instance in self.ec2.instances.filter(Filters=filters):
+            proxies.append(','.join([instance.public_ip_address, '0', instance.id,'0','0']))
+        return proxies
+
+    def delete_ec2(self, instance_id):
+        instance = self.ec2.Instance(instance_id)
+        instance.terminate()
+        instance.wait_until_terminated()
 
 if __name__ == "__main__":
     l = LinodeCommand()

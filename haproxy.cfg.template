@@ -40,9 +40,10 @@ backend rotateproxy
 %(squid_config)s
 
 
-listen admin_stats 0.0.0.0:8080
+listen admin_stats 
+        bind  0.0.0.0:8080
         mode  http
         stats uri       /stats
         stats realm     Global\ statistics
-        stats auth
+        stats auth ubuntu:adG3Hj09l<}
         option contstats
