@@ -1,2 +1,2 @@
-# linode-proxy-daemon
-Automated proxy switcher and manager daemon using Linode nodes
+# rotating-proxy-daemon
+Automated proxy rotator and manager daemon written in Python with backends available in Linode and AWS. Uses pre-prepared squid nodes for the proxy nodes.
