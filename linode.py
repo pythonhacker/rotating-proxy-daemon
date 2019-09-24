@@ -99,6 +99,8 @@ class LinodeProxyRotator(ProxyRotator):
         print 'Post-processing',ip,'...'
         self.post_process(ip)
 
+        return ip, pid
+    
     def update_instance(self, instance_id, label, group=None):
         """ Update meta-data for a new instance """
 
