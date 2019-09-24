@@ -5,7 +5,6 @@ import sys
 import pwd
 import uuid
 import functools
-import boto3
 
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
@@ -95,74 +94,7 @@ def daemonize(pidfile, logfile=None, user='ubuntu', drop=True):
         sys.stdin.close()
         sys.stdout=sys.stderr=log
 
-class LinodeCommand(object):
-    """ Class encapsulating linode CLI commands """
-
-    def __init__(self, binary='linode', verbose=False, config=None):
-        self.binary = binary
-        self.verbose = verbose
-        self.cmd_template = {'create': 'create -d %d -p %d -o %d -i %d -l %s -r %s',
-                             'delete': 'delete -l %d',
-                             'list_proxies': 'find -g %s -s %s' % (config.group, config.proxylb),
-                             'info': 'info -l %d',
-                             'update': 'update -l %d -L %s -g %s'
-                             }
-        # Dynamically create command methods
-        self.dyn_create()
-                             
-    def _run(self, command, *args):
-        """ Run a command and return the output """
-
-        template = self.cmd_template.get(command)
-        if template == None:
-            print 'No such command configured =>',command
-            return -1
-
-        cmd = ' '.join((self.binary, template % args))
-        if self.verbose: print 'Command is',cmd
-        return os.popen(cmd).read()
-
-    def dyn_create(self):
-        """ Dynamically create linode methods """
-
-        for cmd in self.cmd_template:
-            method_name = 'linode_' + cmd
-            method = functools.partial(self._run, cmd)
-            if self.verbose: print 'Dyn-creating method',method_name,'...'
-            setattr(self, method_name, method)
-            
-    def get_label(self, linode_id):
-        """ Return the label, given the linode id """
-
-        data = self.linode_info(linode_id)
-        return data.split('\n')[0].split(':')[-1].strip()
-
-class AWSCommand(object):
-    '''Class encapsulating the aws ec2 API'''
-    def __init__(self, config=None):
-        self.ec2 = boto3.resource('ec2')
-        self.config = config
-
-    def create_ec2(self, **params):
-        return self.ec2.create_instances(MaxCount=1, MinCount=1, **params)[0]
-
-    def list_proxies(self):
-        proxies = []
-        filters=[
-            {'Name':'image-id', 'Values':[self.config.aws_image_id]},
-            {'Name': 'instance-state-name', 'Values': ['running']}
-        ]
-        for instance in self.ec2.instances.filter(Filters=filters):
-            proxies.append(','.join([instance.public_ip_address, '0', instance.id,'0','0']))
-        return proxies
-
-    def delete_ec2(self, instance_id):
-        instance = self.ec2.Instance(instance_id)
-        instance.terminate()
-        instance.wait_until_terminated()
-
 if __name__ == "__main__":
-    l = LinodeCommand()
-    l.get_label(int(sys.argv[1]))
+    pass
 
         
