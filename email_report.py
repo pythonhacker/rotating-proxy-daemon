@@ -3,7 +3,6 @@ import datetime
 import sys
 import socket
 import os
-import ses_email
 import send_gmail
 
 def email_report(config, template, content):
