@@ -60,7 +60,7 @@ class ProxyRotator(object):
         else:
             print 'Using supplied region',region,'...'
 
-        # Switch in the new linode from this region
+        # Switch in the new proxy from this region
         new_proxy, proxy_id = self.make_new_instance(region)
 
         # Rotate another node
@@ -99,7 +99,7 @@ class ProxyRotator(object):
             print 'Error - Did not switch out proxy as there was a problem in writing/restarting LB'
 
         if proxy_out_label != None:
-            # Get its label and assign it to the new linode
+            # Get its label and assign it to the new proxy
             print 'Assigning label',proxy_out_label,'to new instance',proxy_id
             time.sleep(5)
             self.update_instance(proxy_id,
@@ -124,14 +124,14 @@ class ProxyRotator(object):
         os.system(cmd)      
 
     def provision(self, count=8, add=False):
-        """ Provision an entirely fresh set of linodes after dropping current set """
+        """ Provision an entirely fresh set of proxies after dropping current set """
 
         if not add:
             self.drop()
             
         num, idx = 0, 0
 
-        # If we are adding Linodes without dropping, start from current count
+        # If we are adding without dropping, start from current count
         if add:
             start = len(self.config.get_active_proxies())
         else:
@@ -177,14 +177,14 @@ class ProxyRotator(object):
         region = self.pick_region()
         print 'Rotating proxy to new region',region,'...'
         # Make a test IP
-        new_proxy, proxy_id = self.make_new_linode(region, test=True)
+        new_proxy, proxy_id = self.make_new_instance(region, test=True)
         proxy_out = self.config.get_proxy_for_rotation(least_used=True, region_switch=True,
                                                        input_region=region)     
 
         if proxy_out != None:
             print 'Switched out proxy',proxy_out
             proxy_out_id = int(self.config.get_proxy_id(proxy_out))
-            proxy_out_label = self.linode_cmd.get_label(proxy_out_id)           
+            proxy_out_label = self.get_instance_label(proxy_out_id)         
 
         # Switch in the new proxy
         self.config.switch_in_proxy(new_proxy, proxy_id, region)
