@@ -36,7 +36,7 @@ Out: %(label)s, %(proxy_out)s
 
 Region: %(region)s
 
--- Linode proxy daemon
+-- Proxy Rotator Daemon
 
 """
 
@@ -54,7 +54,7 @@ class ProxyConfig(object):
 
         self.parse_config(cfg)
         # This is a file with each line of the form
-        # IPV4 address, datacenter code, linode-id, switch_in timestamp, switch_out timestamp
+        # IPV4 address, datacenter code, instance-id, switch_in timestamp, switch_out timestamp
         # E.g: 45.79.91.191, 3, 1446731065, 144673390
         try:
             proxies = map(lambda x: x.strip().split(','), open(self.proxylist).readlines())
