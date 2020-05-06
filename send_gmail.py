@@ -3,12 +3,7 @@
 Send email via gmail SMTP
 
 """
-
-import os
-import sys
-import optparse
 import smtplib
-import time
 
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
